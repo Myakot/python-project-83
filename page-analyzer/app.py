@@ -9,4 +9,4 @@ app.secret_key = 'secret key'
 @app.route('/')
 def index():
     messages = get_flashed_messages(with_categories=True)
-    return render_template("main.html", messages=messages)
+    return render_template("index.html", messages=messages)
