@@ -19,3 +19,10 @@ lint:
 
 check:
 	poetry check
+
+init_postgres:
+	psql -a -d $(DATABASE_URL) -f database.sql
+
+publish:
+	poetry publish --dry-run
+
