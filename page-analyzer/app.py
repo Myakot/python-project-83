@@ -26,11 +26,11 @@ def index():
 def add_url():
     url = request.form.to_dict()['url']
     if not validators.url(url):
-        flash('Такого URL не существует', 'danger')
+        flash('Некорректный URL', 'danger')
         if not url:
-            flash('Вы не ввели URL', 'danger')
+            flash('URL обязателен', 'danger')
         elif not validators.length(url, max=255):
-            flash('Введите URL покороче', 'danger')
+            flash('URL превышает 255 символов', 'danger')
         return redirect(url_for('index'), 302)
     normalized_url = normalize(url)
     connection = db_connect()
@@ -38,17 +38,17 @@ def add_url():
         cursor.execute("SELECT * FROM urls WHERE name=%s;", (normalized_url, ))
         existed_url = cursor.fetchone()
         if existed_url:
-            flash('URL уже существует', 'info')
+            flash('Страница уже существует', 'info')
             current_id = existed_url.id
         else:
             cursor.execute(
                 "INSERT INTO urls (name, created_at) VALUES (%s, %s);",
-                (normalized_url, datetime.datetime.now().strftime('%Y-%m-%d'))
+                (normalized_url, datetime.datetime.now())
             )
             cursor.execute("SELECT * FROM urls WHERE name=%s;", (normalized_url,))
             added_url = cursor.fetchone()
             current_id = added_url.id
-            flash('URL успешно добавлен', 'success')
+            flash('Страница успешно добавлена', 'success')
     connection.close()
     return redirect(url_for('get_url', id=current_id), 302)
 
@@ -60,9 +60,12 @@ def get_url(id):
     with connection.cursor(cursor_factory=NamedTupleCursor) as cursor:
         cursor.execute("SELECT * FROM urls WHERE id=%s;", (id, ))
         url = cursor.fetchone()
+        cursor.execute("SELECT * FROM url_checks WHERE url_id=%s ORDER BY id DESC;", (id,))
+        checks = cursor.fetchall()
     return render_template(
         'url.html',
         url=url,
+        checks=checks,
         messages=messages
     )
 
@@ -71,7 +74,16 @@ def get_url(id):
 def get_urls():
     connection = db_connect()
     with connection.cursor(cursor_factory=NamedTupleCursor) as cursor:
-        cursor.execute("SELECT * FROM urls ORDER BY id DESC;")
+        cursor.execute(
+            '''
+            SELECT DISTINCT ON (result_query.id) * FROM (
+                SELECT urls.id, name, url_checks.created_at, status_code FROM url_checks 
+                RIGHT JOIN urls ON url_checks.url_id = urls.id      
+                ORDER BY urls.id DESC, url_checks.created_at DESC
+            ) as result_query
+            ORDER BY result_query.id DESC;
+            '''
+        )
         all_urls = cursor.fetchall()
     connection.close()
     messages = get_flashed_messages(with_categories=True)
@@ -80,6 +92,18 @@ def get_urls():
         urls=all_urls,
         messages=messages
     )
+
+
+@app.post('/urls/<int:id>/checks')
+def check_url(id):
+    connection = db_connect()
+    with connection.cursor(cursor_factory=NamedTupleCursor) as cursor:
+        cursor.execute(
+            "INSERT INTO url_checks (url_id, created_at) VALUES (%s, %s);",
+            (id, datetime.datetime.now())
+        )
+    connection.close()
+    return redirect(url_for('get_url', id=id), 302)
 
 
 def db_connect():
