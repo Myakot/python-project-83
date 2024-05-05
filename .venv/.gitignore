@@ -26,6 +26,7 @@ pip-delete-this-directory.txt
 
 # Unit test / coverage reports
 .tox/
+.env
 .coverage
 .cache
 .idea
