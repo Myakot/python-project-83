@@ -54,7 +54,9 @@ def add_url():
                 "INSERT INTO urls (name, created_at) VALUES (%s, %s);",
                 (normalized_url, datetime.datetime.now())
             )
-            cursor.execute("SELECT * FROM urls WHERE name=%s;", (normalized_url,))
+            cursor.execute(
+                "SELECT * FROM urls WHERE name=%s;", (normalized_url,)
+            )
             added_url = cursor.fetchone()
             current_id = added_url.id
             flash('Страница успешно добавлена', 'success')
@@ -71,7 +73,9 @@ def get_url(id):
         url = cursor.fetchone()
         if not url:
             abort(404)
-        cursor.execute("SELECT * FROM url_checks WHERE url_id=%s ORDER BY id DESC;", (id,))
+        cursor.execute(
+            "SELECT * FROM url_checks WHERE url_id=%s ORDER BY id DESC;", (id,)
+        )
         checks = cursor.fetchall()
     return render_template(
         'url.html',
@@ -88,7 +92,8 @@ def get_urls():
         cursor.execute(
             '''
             SELECT DISTINCT ON (result_query.id) * FROM (
-                SELECT urls.id, name, url_checks.created_at, status_code FROM url_checks
+                SELECT urls.id, name, url_checks.created_at,
+                status_code FROM url_checks
                 RIGHT JOIN urls ON url_checks.url_id = urls.id
                 ORDER BY urls.id DESC, url_checks.created_at DESC
             ) as result_query
@@ -118,11 +123,13 @@ def check_url(id):
             page_content = get_url_content(response)
             cursor.execute('''
                             INSERT INTO url_checks
-                            (url_id, created_at, status_code, h1, title, description)
+                            (url_id, created_at, status_code,
+                            h1, title, description)
                             VALUES (%s, %s, %s, %s, %s, %s);
                             ''',
                            (id, datetime.datetime.now(), response.status_code,
-                            page_content['h1'], page_content['title'], page_content['description']))
+                            page_content['h1'], page_content['title'],
+                            page_content['description']))
             flash('Страница успешно проверена', 'success')
     connection.close()
     return redirect(url_for('get_url', id=id), 302)
@@ -162,7 +169,9 @@ def get_url_content(response):
     if page.find('title'):
         content['title'] = page.find('title').text
     if page.find('meta', attrs={'name': 'description'}):
-        content['description'] = page.find('meta', attrs={'name': 'description'})['content']
+        content['description'] = page.find(
+            'meta', attrs={'name': 'description'}
+        )['content']
     return content
 
 
