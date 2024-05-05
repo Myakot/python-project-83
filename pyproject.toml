@@ -19,6 +19,7 @@ psycopg2-binary = "^2.9.9"
 python-dotenv = "^1.0.1"
 validators = "^0.28.1"
 bs4 = "^0.0.2"
+flake8 = "^7.0.0"
 
 [tool.poetry.dev-dependencies]
 
