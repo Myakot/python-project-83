@@ -1,4 +1,11 @@
-from flask import Flask, render_template, request, redirect, flash, get_flashed_messages, url_for, abort
+from flask import (
+    Flask,
+    render_template,
+    request, redirect,
+    flash,
+    get_flashed_messages,
+    url_for,
+    abort)
 from dotenv import load_dotenv
 from urllib.parse import urlparse
 from psycopg2.extras import NamedTupleCursor
@@ -81,8 +88,8 @@ def get_urls():
         cursor.execute(
             '''
             SELECT DISTINCT ON (result_query.id) * FROM (
-                SELECT urls.id, name, url_checks.created_at, status_code FROM url_checks 
-                RIGHT JOIN urls ON url_checks.url_id = urls.id      
+                SELECT urls.id, name, url_checks.created_at, status_code FROM url_checks
+                RIGHT JOIN urls ON url_checks.url_id = urls.id
                 ORDER BY urls.id DESC, url_checks.created_at DESC
             ) as result_query
             ORDER BY result_query.id DESC;
@@ -110,8 +117,8 @@ def check_url(id):
         else:
             page_content = get_url_content(response)
             cursor.execute('''
-                            INSERT INTO url_checks 
-                            (url_id, created_at, status_code, h1, title, description) 
+                            INSERT INTO url_checks
+                            (url_id, created_at, status_code, h1, title, description)
                             VALUES (%s, %s, %s, %s, %s, %s);
                             ''',
                            (id, datetime.datetime.now(), response.status_code,
