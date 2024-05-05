@@ -40,7 +40,7 @@ def add_url():
             flash('URL обязателен', 'danger')
         elif validators.length(url, max=255):
             flash('URL превышает 255 символов', 'danger')
-        return redirect(url_for('index'), 302)
+        return redirect(url_for('index'), 422)
     normalized_url = normalize(url)
     connection = db_connect()
     with connection.cursor(cursor_factory=NamedTupleCursor) as cursor:
