@@ -31,7 +31,7 @@ def index():
     )
 
 
-@app.post('/')
+@app.post('/urls')
 def add_url():
     url = request.form.to_dict()['url']
     if not validators.url(url):
