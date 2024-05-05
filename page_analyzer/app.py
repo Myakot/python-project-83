@@ -38,7 +38,7 @@ def add_url():
         flash('Некорректный URL', 'danger')
         if not url:
             flash('URL обязателен', 'danger')
-        elif not validators.length(url, max=255):
+        elif validators.length(url, max=255):
             flash('URL превышает 255 символов', 'danger')
         return redirect(url_for('index'), 302)
     normalized_url = normalize(url)
