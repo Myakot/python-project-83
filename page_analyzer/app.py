@@ -40,10 +40,10 @@ def post_urls():
     id = db.create_url(url)
     if id is not None:
         flash('Страница уже существует', 'warning')
-        return redirect(url_for('get_url_id', id=id[0]))
+        return redirect(url_for('get_url_by_id', id=id[0]))
     flash('Страница успешно добавлена', category='success')
     id = db.insert_url(url, datetime.date.today())
-    return redirect(url_for('get_url_id', id=id.id))
+    return redirect(url_for('get_url_by_id', id=id.id))
 
 
 @app.get('/urls')
@@ -92,7 +92,7 @@ def post_check_id(id):
         )
     except requests.RequestException:
         flash('Произошла ошибка при проверке', 'error')
-    return redirect(url_for('get_url_id', id=id))
+    return redirect(url_for('get_url_by_id', id=id))
 
 
 def check_url(url):
