@@ -4,181 +4,108 @@ from flask import (
     request,
     redirect,
     flash,
-    url_for,
-    abort)
-from dotenv import load_dotenv
-from urllib.parse import urlparse
-from psycopg2.extras import NamedTupleCursor
-from bs4 import BeautifulSoup
+    get_flashed_messages,
+    url_for
+)
 import os
-import psycopg2
+from dotenv import load_dotenv, find_dotenv
 import datetime
-import validators
+from urllib.parse import urlparse
 import requests
+from bs4 import BeautifulSoup
+import validators
+import page_analyzer.db as db
+
+
+load_dotenv(find_dotenv())
 
 app = Flask(__name__)
-
-load_dotenv()
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
-DATABASE_URL = os.getenv('DATABASE_URL')
 
 
 @app.route('/')
 def index():
-    return render_template('index.html')
-
-
-@app.route('/urls')
-def get_urls():
-    connection = database_connect()
-    with connection.cursor(cursor_factory=NamedTupleCursor) as cursor:
-        cursor.execute(
-            '''
-            SELECT DISTINCT ON (urls.id)
-                urls.id, name, url_checks.created_at, status_code
-            FROM url_checks RIGHT JOIN urls ON url_checks.url_id = urls.id
-            ORDER BY urls.id DESC, url_checks.created_at DESC;
-            '''
-        )
-        urls = cursor.fetchall()
-    connection.close()
-    return render_template('urls.html', urls=urls)
-
-
-@app.route('/urls/<int:id>')
-def get_url(id):
-    connection = database_connect()
-    with connection.cursor(cursor_factory=NamedTupleCursor) as cursor:
-        cursor.execute(
-            "SELECT * FROM urls WHERE id=%s;",
-            (id, )
-        )
-        url = cursor.fetchone()
-        if not url:
-            abort(404, description='Страница не найдена', response=404)
-        cursor.execute(
-            "SELECT * FROM url_checks WHERE url_id=%s ORDER BY id DESC;",
-            (id, )
-        )
-        checks = cursor.fetchall()
-    connection.close()
-    return render_template('url.html', url=url, checks=checks)
+    messages = get_flashed_messages(with_categories=True)
+    return render_template('index.html', messages=messages)
 
 
 @app.post('/urls')
-def add_url():
-    url = request.form.to_dict()['url']
-    if not validators.url(url):
-        flash('Некорректный URL', 'danger')
-        if not url:
-            flash('URL обязателен', 'danger')
-        elif validators.length(url, max=255):
-            flash('URL превышает 255 символов', 'danger')
-        return render_template('index.html', url=url), 422
-    normalized_url = normalize(url)
-    connection = database_connect()
-    with connection.cursor(cursor_factory=NamedTupleCursor) as cursor:
-        cursor.execute(
-            "SELECT * FROM urls WHERE name=%s;",
-            (normalized_url, )
-        )
-        existed_url = cursor.fetchone()
-        if existed_url:
-            flash('Страница уже существует', 'info')
-            current_id = existed_url.id
-        else:
-            cursor.execute(
-                "INSERT INTO urls (name, created_at) VALUES (%s, %s);",
-                (normalized_url, datetime.datetime.now())
-            )
-            cursor.execute(
-                "SELECT * FROM urls WHERE name=%s;",
-                (normalized_url, )
-            )
-            added_url = cursor.fetchone()
-            current_id = added_url.id
-            flash('Страница успешно добавлена', 'success')
-    connection.close()
-    return redirect(url_for('get_url', id=current_id), 302)
+def post_urls():
+    url = request.form.get('url')
+    if check_url(url):
+        messages = get_flashed_messages(with_categories=True)
+        return render_template('index.html', messages=messages), 422
+    url = urlparse(url)
+    url = f'{url.scheme}://{url.netloc}'
+    id = db.create_url(url)
+    if id is not None:
+        flash('Страница уже существует', 'warning')
+        return redirect(url_for('get_url_id', id=id[0]))
+    flash('Страница успешно добавлена', category='success')
+    id = db.insert_url(url, datetime.date.today())
+    return redirect(url_for('get_url_id', id=id.id))
+
+
+@app.get('/urls')
+def get_all_urls():
+    urls = db.select_all()
+    return render_template('urls.html', urls=urls)
+
+
+@app.get('/urls/<int:id>')
+def get_url_by_id(id):
+    message = get_flashed_messages(with_categories=True)
+    url = db.select_url_by_id(id)
+    checks = db.select_url_checks(id)
+    return render_template(
+        'url.html',
+        url=url.name,
+        id=id,
+        created_at=url.created_at,
+        messages=message,
+        checks=checks
+    )
 
 
 @app.post('/urls/<int:id>/checks')
-def check_url(id):
-    connection = database_connect()
-    with connection.cursor(cursor_factory=NamedTupleCursor) as cursor:
-        cursor.execute(
-            "SELECT * FROM urls WHERE id=%s;",
-            (id, )
+def post_check_id(id):
+    url = db.select_url_by_id(id)
+    try:
+        response = requests.get(url.name)
+        if response.status_code != 200:
+            raise requests.RequestException
+        status = response.status_code
+        html_data = response.content
+        soap = BeautifulSoup(html_data, 'html.parser')
+        title = soap.title.text if soap.title is not None else ''
+        h1 = soap.h1.text if soap.h1 is not None else ''
+        content = soap.find('meta', {"name": "description"})
+        content = content.attrs['content'] if content else ''
+        flash('Страница успешно проверена', 'success')
+        db.insert_into_url_checks(
+            id,
+            status,
+            h1,
+            title,
+            content,
+            datetime.date.today()
         )
-        url = cursor.fetchone()
-        site_content = get_site_content(url.name)
-        if not site_content:
-            flash('Произошла ошибка при проверке', 'danger')
-        else:
-            cursor.execute(
-                '''
-                INSERT INTO url_checks
-                (url_id, created_at, status_code, h1, title, description)
-                VALUES (%s, %s, %s, %s, %s, %s);
-                ''',
-                (
-                    id,
-                    datetime.datetime.now(),
-                    site_content['status_code'],
-                    site_content['h1'],
-                    site_content['title'],
-                    site_content['description']
-                )
-            )
-            flash('Страница успешно проверена', 'success')
-    connection.close()
-    return redirect(url_for('get_url', id=id), 302)
+    except requests.RequestException:
+        flash('Произошла ошибка при проверке', 'error')
+    return redirect(url_for('get_url_id', id=id))
 
 
-@app.errorhandler(503)
-@app.errorhandler(404)
-def resource_not_found(error):
-    return render_template(
-        '404_not_found.html',
-        error_message=error.description
-    ), error.response
-
-
-@app.template_filter()
-def format_timestamp(datetime):
-    return datetime.strftime('%Y-%m-%d %H:%M:%S') if datetime else ''
-
-
-def database_connect():
-    try:
-        connection = psycopg2.connect(DATABASE_URL)
-        connection.autocommit = True
-        return connection
-    except psycopg2.DatabaseError or psycopg2.OperationalError:
-        abort(503, description='Ошибка доступа к базе данных', response=503)
-
-
-def normalize(url):
-    url = urlparse(url)
-    return f'{url.scheme}://{url.netloc}'
-
-
-def get_site_content(url):
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        page = BeautifulSoup(response.text, 'html.parser')
-        description = page.find('meta', attrs={'name': 'description'})
-        site_content = {
-            'status_code':
-                response.status_code,
-            'h1':
-                page.find('h1').text if page.find('h1') else '',
-            'title':
-                page.find('title').text if page.find('title') else '',
-            'description':
-                description['content'] if description else ''
-        }
-        return site_content
-    except requests.exceptions.RequestException:
+def check_url(url):
+    if not validators.url(url):
+        flash('Некорректный URL', 'error')
+        if len(url) == 0:
+            flash('URL обязателен', 'error')
+    elif len(url) > 255:
+        flash('URL превышает 255 символов', 'error')
+    else:
         return False
+    return True
+
+
+if __name__ == '__main__':
+    app.run()
