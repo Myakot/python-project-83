@@ -1,8 +1,15 @@
 [tool.poetry]
 name = "hexlet-code"
 version = "0.1.0"
-description = ""
-authors = ["Your Name <you@example.com>"]
+description = "Page Analyzer is a site that analyzes websites for SEO suitability."
+authors = ["Myakot <cstepan@yandex.ru>"]
+classifiers = [
+    "Framework :: Flask",
+    "License :: Freeware",
+    "Natural Language :: Russian",
+    "Operating System :: POSIX :: Linux",
+    "Topic :: Education",
+]
 packages = [
   { include = "page_analyzer" },
 ]
@@ -22,6 +29,7 @@ bs4 = "^0.0.2"
 flake8 = "^7.0.0"
 
 [tool.poetry.dev-dependencies]
+flake8 = "^6.1.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
