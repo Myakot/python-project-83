@@ -8,7 +8,8 @@
 
 ### Description
 Page Analyzer is a site that analyzes websites for SEO suitability.  
-The application uses Python library [Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/bs4/doc/) to parse websites.  
+The application uses Python library 
+[Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/bs4/doc/) to parse websites.  
 The results of the checks of websites are parsing: 
 h1, title, description and code status.
 The application saves all of it on a remote postgres database.
@@ -31,6 +32,7 @@ Create a ".env" file in the project folder, add these variables into it:
 SECRET_KEY={secret_key}  
 DATABASE_URL=postgresql://{user_name}:{password}@localhost:5432/page_analyzer  
 ```  
-In order to get your own database credentials, sign up on [Postgres](https://www.postgresql.org/) or [Render](https://render.com/)
+In order to get your own database credentials, sign up on [Postgres](https://www.postgresql.org/) 
+or [Render](https://render.com/)
 
 After everything is setup just type `make run` to start the project.
