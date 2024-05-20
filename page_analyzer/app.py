@@ -8,7 +8,6 @@ from flask import (
     url_for
 )
 import os
-from dotenv import load_dotenv, find_dotenv
 import datetime
 from urllib.parse import urlparse
 import requests
@@ -18,7 +17,11 @@ import page_analyzer.db as db
 from .utils import check_url
 
 
-load_dotenv(find_dotenv())
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ModuleNotFoundError:
+    pass
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
