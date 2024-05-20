@@ -1,4 +1,5 @@
 import validators
+from flask import flash
 
 
 def check_url(url):

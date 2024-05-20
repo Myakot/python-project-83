@@ -7,7 +7,7 @@ load_dotenv(find_dotenv())
 DATABASE_URL = os.getenv('DATABASE_URL')
 
 
-def create_url(url):
+def add_url_to_database(url):
     with psycopg2.connect(DATABASE_URL) as conn:
         with conn.cursor(cursor_factory=NamedTupleCursor) as curs:
             curs.execute("SELECT id FROM urls WHERE name=%s", (url,))
@@ -29,7 +29,7 @@ def insert_url(url, date):
     return queryset
 
 
-def select_all():
+def get_all_urls():
     with psycopg2.connect(DATABASE_URL) as conn:
         with conn.cursor(cursor_factory=NamedTupleCursor) as curs:
             curs.execute("""
@@ -65,7 +65,7 @@ def select_url_by_id(id):
     return queryset
 
 
-def select_url_checks(id):
+def get_url_checks(id):
     with psycopg2.connect(DATABASE_URL) as conn:
         with conn.cursor(cursor_factory=NamedTupleCursor) as curs:
             curs.execute("""
@@ -89,7 +89,7 @@ def select_url_checks(id):
     return queryset
 
 
-def insert_into_url_checks(id, status, h1, title, content, created_at):
+def add_url_checks(id, status, h1, title, content, created_at):
     with psycopg2.connect(DATABASE_URL) as conn:
         with conn.cursor(cursor_factory=NamedTupleCursor) as curs:
             curs.execute("""

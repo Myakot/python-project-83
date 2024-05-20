@@ -12,7 +12,6 @@ import datetime
 from urllib.parse import urlparse
 import requests
 from bs4 import BeautifulSoup
-import validators
 import page_analyzer.db as db
 from .utils import check_url
 
@@ -41,7 +40,7 @@ def post_urls():
         return render_template('index.html', messages=messages), 422
     url = urlparse(url)
     url = f'{url.scheme}://{url.netloc}'
-    id = db.create_url(url)
+    id = db.add_url_to_database(url)
     if id is not None:
         flash('Страница уже существует', 'warning')
         return redirect(url_for('get_url_by_id', id=id[0]))
@@ -52,7 +51,7 @@ def post_urls():
 
 @app.get('/urls')
 def get_all_urls():
-    urls = db.select_all()
+    urls = db.get_all_urls()
     return render_template('urls.html', urls=urls)
 
 
@@ -60,7 +59,7 @@ def get_all_urls():
 def get_url_by_id(id):
     message = get_flashed_messages(with_categories=True)
     url = db.select_url_by_id(id)
-    checks = db.select_url_checks(id)
+    checks = db.get_url_checks(id)
     return render_template(
         'url.html',
         url=url.name,
@@ -86,7 +85,7 @@ def post_check_id(id):
         content = soap.find('meta', {"name": "description"})
         content = content.attrs['content'] if content else ''
         flash('Страница успешно проверена', 'success')
-        db.insert_into_url_checks(
+        db.add_url_checks(
             id,
             status,
             h1,
