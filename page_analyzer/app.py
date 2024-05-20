@@ -15,6 +15,7 @@ import requests
 from bs4 import BeautifulSoup
 import validators
 import page_analyzer.db as db
+from .utils import check_url
 
 
 load_dotenv(find_dotenv())
@@ -93,18 +94,6 @@ def post_check_id(id):
     except requests.RequestException:
         flash('Произошла ошибка при проверке', 'error')
     return redirect(url_for('get_url_by_id', id=id))
-
-
-def check_url(url):
-    if not validators.url(url):
-        flash('Некорректный URL', 'error')
-        if len(url) == 0:
-            flash('URL обязателен', 'error')
-    elif len(url) > 255:
-        flash('URL превышает 255 символов', 'error')
-    else:
-        return False
-    return True
 
 
 if __name__ == '__main__':
