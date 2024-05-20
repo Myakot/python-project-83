@@ -36,3 +36,20 @@ In order to get your own database credentials, sign up on [Postgres](https://www
 or [Render](https://render.com/)
 
 After everything is setup just type `make run` to start the project.
+
+### Recorded example run:
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/kIrgt-7IFp0/0.jpg)](https://www.youtube.com/watch?v=kIrgt-7IFp0)
+
+### Tools used during the making of this project:
+```
+python = "^3.10"
+urllib3 = "1.26.15"
+Flask = "^3.0.3"
+gunicorn = "^22.0.0"
+psycopg = "^3.1.18"
+requests = "^2.31.0"
+psycopg2-binary = "^2.9.9"
+python-dotenv = "^1.0.1"
+validators = "^0.28.1"
+bs4 = "^0.0.2"
+```
