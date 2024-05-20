@@ -52,7 +52,7 @@ def post_urls():
 @app.get('/urls')
 def get_all_urls():
     urls = db.get_all_urls()
-    return render_template('urls.html', urls=urls)
+    return render_template('urls/list.html', urls=urls)
 
 
 @app.get('/urls/<int:id>')
@@ -61,7 +61,7 @@ def get_url_by_id(id):
     url = db.select_url_by_id(id)
     checks = db.get_url_checks(id)
     return render_template(
-        'url.html',
+        'urls/detail.html',
         url=url.name,
         id=id,
         created_at=url.created_at,
