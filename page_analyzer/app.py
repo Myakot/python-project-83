@@ -15,6 +15,7 @@ import requests
 from bs4 import BeautifulSoup
 import validators
 import page_analyzer.db as db
+from page_analyzer.html_parser import HTMLParser
 
 
 load_dotenv(find_dotenv())
@@ -74,22 +75,15 @@ def post_check_id(id):
         response = requests.get(url.name)
         if response.status_code != 200:
             raise requests.RequestException
-        status = response.status_code
-        html_data = response.content
-        soap = BeautifulSoup(html_data, 'html.parser')
-        title = soap.title.text if soap.title is not None else ''
-        h1 = soap.h1.text if soap.h1 is not None else ''
-        content = soap.find('meta', {"name": "description"})
-        content = content.attrs['content'] if content else ''
+        page_content = response.content
+        page_parser = HTMLParser(page_content)
+        page_data = page_parser.get_page_data()
+        full_check = dict(page_data, url_id=id, response=response.status_code)
+
+        db.insert_into_url_checks(full_check['url_id'], full_check['status_code'],
+                                  full_check['h1'], full_check['title'],
+                                  full_check['content'], datetime.datetime.now())
         flash('Страница успешно проверена', 'success')
-        db.insert_into_url_checks(
-            id,
-            status,
-            h1,
-            title,
-            content,
-            datetime.date.today()
-        )
     except requests.RequestException:
         flash('Произошла ошибка при проверке', 'error')
     return redirect(url_for('get_url_by_id', id=id))

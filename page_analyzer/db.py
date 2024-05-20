@@ -89,26 +89,26 @@ def select_url_checks(id):
     return queryset
 
 
-def insert_into_url_checks(id, status, h1, title, content, created_at):
+def insert_into_url_checks(url_id, status_code, h1, title, description, created_at):
     with psycopg2.connect(DATABASE_URL) as conn:
         with conn.cursor(cursor_factory=NamedTupleCursor) as curs:
             curs.execute("""
-                                            INSERT INTO url_checks (
-                                                url_id,
-                                                status_code,
-                                                h1,
-                                                title,
-                                                description,
-                                                created_at
-                                                )
-                                            VALUES (%s, %s, %s, %s, %s, %s)
-                                            """,
+                            INSERT INTO url_checks (
+                                url_id,
+                                status_code,
+                                h1,
+                                title,
+                                description,
+                                created_at
+                            )
+                            VALUES (%s, %s, %s, %s, %s, %s)
+                            """,
                          (
-                             id,
-                             status,
+                             url_id,
+                             status_code,
                              h1,
                              title,
-                             content,
+                             description,
                              created_at
                          )
                          )
