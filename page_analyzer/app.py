@@ -12,7 +12,6 @@ from dotenv import load_dotenv, find_dotenv
 import datetime
 from urllib.parse import urlparse
 import requests
-from bs4 import BeautifulSoup
 import validators
 import page_analyzer.db as db
 from page_analyzer.html_parser import HTMLParser
@@ -78,12 +77,18 @@ def post_check_id(id):
         page_content = response.content
         page_parser = HTMLParser(page_content)
         page_data = page_parser.get_page_data()
-        full_check = dict(page_data, url_id=id, response=response.status_code)
+        full_check = dict(page_data, url_id=id)
 
-        db.insert_into_url_checks(full_check['url_id'], full_check['status_code'],
-                                  full_check['h1'], full_check['title'],
-                                  full_check['content'], datetime.datetime.now())
-        flash('Страница успешно проверена', 'success')
+        if 'status_code' in full_check:
+            db.insert_into_url_checks(full_check['url_id'],
+                                      full_check['status_code'],
+                                      full_check['h1'],
+                                      full_check['title'],
+                                      full_check['content'],
+                                      datetime.datetime.now())
+            flash('Страница успешно проверена', 'success')
+        else:
+            flash('Ошибка проверки: отсутствует ключ status_code', 'error')
     except requests.RequestException:
         flash('Произошла ошибка при проверке', 'error')
     return redirect(url_for('get_url_by_id', id=id))
