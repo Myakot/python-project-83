@@ -1,0 +1,33 @@
+{% extends 'page_header.html' %}
+{% block content -%}
+{{ super() }}
+
+    <main class="flex-grow-1">
+        <div class="container-lg mt-3">
+            <h1>Сайты</h1>
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover text-nowrap" data-test="urls">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Имя</th>
+                            <th>Последняя проверка</th>
+                            <th>Код ответа</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in data %}
+                        <tr>
+                            <td>{{ row.id }}</td>
+                            <td><a href="{{ url_for("link_page", id=row.id) }}">{{ row.name }}</a></td>
+                            <td>{{ row.created_at if row.created_at != None else ""}}</td>
+                            <td>{{ row.status_code if row.status_code != None else ""}}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+{% endblock -%}
