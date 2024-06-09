@@ -14,7 +14,7 @@ from contextlib import contextmanager
 load_dotenv()
 SECRET_KEY = os.getenv('SECRET_KEY')
 DATABASE_URL = os.getenv('DATABASE_URL')
-connect_db = psycopg2.pool.SimpleConnectionPool(1, 20, DATABASE_URL)  #check
+connect_db = psycopg2.pool.SimpleConnectionPool(1, 20, DATABASE_URL)
 
 
 @contextmanager
